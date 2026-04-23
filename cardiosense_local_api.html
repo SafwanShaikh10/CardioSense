@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardioSense</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --dark:#40415D;
+    --light:#DDDFEE;
+    --dark70:rgba(64,65,93,0.7);
+    --dark40:rgba(64,65,93,0.4);
+    --dark20:rgba(64,65,93,0.2);
+    --dark10:rgba(64,65,93,0.1);
+    --dark05:rgba(64,65,93,0.05);
+    --white:#fff;
+    --font:'Georgia',serif;
+    --sans:'Helvetica Neue',Arial,sans-serif;
+    --radius:10px;
+  }
+  body{background:var(--light);color:var(--dark);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+
+  /* SCREENS */
+  .screen{display:none;min-height:100vh}
+  .screen.active{display:flex}
+  #results.active{display:block}
+
+  /* ── LANDING ── */
+  #landing{flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;text-align:center}
+  .heart-icon{width:56px;height:56px;border:1.5px solid var(--dark);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 2rem;font-size:22px;animation:heartbeat 2.8s ease-in-out infinite}
+  @keyframes heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.08)}28%{transform:scale(1)}}
+  h1.brand{font-family:var(--font);font-size:clamp(2.4rem,5vw,3.4rem);font-weight:400;letter-spacing:-0.5px;line-height:1.15;margin-bottom:1rem}
+  h1.brand em{font-style:normal;color:var(--dark70)}
+  .tagline{font-size:.95rem;color:var(--dark70);max-width:460px;line-height:1.8;margin-bottom:2.5rem}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:3rem}
+  .pill{border:1px solid var(--dark20);border-radius:999px;padding:5px 14px;font-size:11px;letter-spacing:.3px;color:var(--dark70)}
+  .btn-primary{background:var(--dark);color:var(--light);border:none;border-radius:6px;padding:15px 48px;font-size:.9rem;letter-spacing:.5px;cursor:pointer;font-family:var(--sans);transition:opacity .2s,transform .15s}
+  .btn-primary:hover{opacity:.85;transform:translateY(-1px)}
+  .btn-primary:active{transform:translateY(0)}
+  .disclaimer{margin-top:2.5rem;font-size:11px;color:var(--dark40);max-width:400px;line-height:1.7}
+
+  /* ── QUESTIONS ── */
+  #questions{flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+  .q-nav{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:540px;margin-bottom:3.5rem}
+  .back-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--dark70);font-family:var(--sans);padding:4px 0;transition:color .15s}
+  .back-btn:hover{color:var(--dark)}
+  .prog-track{flex:1;height:2px;background:var(--dark20);margin:0 16px;border-radius:999px;overflow:hidden}
+  .prog-fill{height:100%;background:var(--dark);border-radius:999px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .q-count{font-size:12px;color:var(--dark70);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+  .q-card{width:100%;max-width:540px;animation:fadeUp .3s ease forwards}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+  .q-step{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dark40);margin-bottom:.75rem}
+  .q-text{font-family:var(--font);font-size:clamp(1.3rem,3vw,1.7rem);font-weight:400;line-height:1.4;margin-bottom:.5rem}
+  .q-hint{font-size:12px;color:var(--dark70);margin-bottom:2rem;line-height:1.6;padding:10px 12px;background:var(--dark05);border-radius:6px;border-left:2px solid var(--dark20)}
+
+  .choices{display:flex;flex-direction:column;gap:8px;margin-bottom:2rem}
+  .choice{border:1.5px solid var(--dark20);border-radius:var(--radius);padding:13px 16px;background:var(--white);cursor:pointer;text-align:left;font-family:var(--sans);font-size:.875rem;color:var(--dark);transition:all .18s;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+  .choice::before{content:'';position:absolute;inset:0;background:var(--dark);opacity:0;transition:opacity .18s}
+  .choice:hover{border-color:var(--dark);transform:translateX(2px)}
+  .choice:hover .choice-ltr{opacity:1}
+  .choice.sel{border-color:var(--dark);background:var(--dark);color:var(--light)}
+  .choice.sel .choice-ltr{border-color:rgba(221,223,238,.5);opacity:1}
+  .choice.sel small{opacity:.65}
+  .choice-ltr{width:26px;height:26px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;opacity:.5;transition:opacity .18s;position:relative;z-index:1}
+  .choice-body{position:relative;z-index:1}
+  .choice-body strong{display:block;font-weight:500;margin-bottom:2px}
+  .choice-body small{font-size:11px;opacity:.6;line-height:1.4;display:block}
+
+  .slider-wrap{margin-bottom:2.5rem}
+  .slider-val{font-family:var(--font);font-size:3.5rem;font-weight:400;margin-bottom:1.5rem;display:flex;align-items:baseline;gap:10px;letter-spacing:-1px}
+  .slider-unit{font-size:1rem;color:var(--dark70);font-family:var(--sans);letter-spacing:0}
+  input[type=range]{width:100%;-webkit-appearance:none;height:2px;border-radius:999px;background:var(--dark20);outline:none;cursor:pointer;transition:background .2s}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--dark);border:2.5px solid var(--light);box-shadow:0 0 0 1.5px var(--dark);cursor:pointer;transition:transform .15s}
+  input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.15)}
+  .slider-minmax{display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:var(--dark40)}
+
+  .btn-next{background:var(--dark);color:var(--light);border:none;border-radius:6px;padding:14px 40px;font-size:.875rem;cursor:pointer;font-family:var(--sans);letter-spacing:.4px;transition:opacity .2s,transform .15s}
+  .btn-next:disabled{opacity:.25;cursor:not-allowed;transform:none}
+  .btn-next:not(:disabled):hover{opacity:.85;transform:translateY(-1px)}
+  .btn-next:not(:disabled):active{transform:translateY(0)}
+
+  /* ── LOADING ── */
+  #loading{flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
+  .spinner{width:44px;height:44px;border-radius:50%;border:2px solid var(--dark10);border-top:2px solid var(--dark);animation:spin 0.9s linear infinite;margin:0 auto 2rem}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .load-title{font-family:var(--font);font-size:1.4rem;font-weight:400;margin-bottom:.5rem}
+  .load-sub{font-size:13px;color:var(--dark70);line-height:1.7}
+
+  /* ── RESULTS ── */
+  #results{padding:0;min-height:100vh}
+  .results-inner{max-width:600px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+
+  .results-hero{text-align:center;padding-bottom:2.5rem;border-bottom:1px solid var(--dark10)}
+  .risk-badge{display:inline-block;border-radius:999px;padding:5px 18px;font-size:11px;letter-spacing:.7px;text-transform:uppercase;margin-bottom:1.25rem}
+  .badge-low{background:var(--dark10);color:var(--dark)}
+  .badge-mod{background:var(--dark20);color:var(--dark)}
+  .badge-high{background:var(--dark);color:var(--light)}
+  .risk-pct{font-family:var(--font);font-size:5.5rem;font-weight:400;line-height:1;margin-bottom:.25rem;letter-spacing:-2px}
+  .risk-sub{font-size:.85rem;color:var(--dark70);margin-bottom:1.5rem;letter-spacing:.3px}
+  .gauge-svg{display:block;margin:0 auto 1.5rem}
+  .risk-note{font-size:.875rem;color:var(--dark70);line-height:1.7;max-width:420px;margin:0 auto}
+
+  .section-hd{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dark40);margin:2.5rem 0 1.25rem;padding-top:2.5rem;border-top:1px solid var(--dark10)}
+
+  /* tabs */
+  .tab-row{display:flex;gap:0;margin-bottom:1.5rem;border:1.5px solid var(--dark20);border-radius:6px;overflow:hidden;width:fit-content}
+  .tab-btn{background:transparent;border:none;padding:8px 22px;font-size:12px;letter-spacing:.4px;cursor:pointer;font-family:var(--sans);color:var(--dark70);transition:all .15s}
+  .tab-btn.active{background:var(--dark);color:var(--light)}
+
+  .feat-list{display:flex;flex-direction:column;gap:18px}
+  .feat-row{}
+  .feat-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .feat-name{font-size:.875rem;font-weight:500}
+  .feat-val{font-size:.8rem;color:var(--dark70);background:var(--dark05);padding:2px 8px;border-radius:999px}
+  .bar-track{height:4px;background:var(--dark10);border-radius:999px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:999px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+  .bar-up{background:var(--dark)}
+  .bar-down{background:var(--dark40)}
+  .feat-note{font-size:11px;margin-top:5px;line-height:1.5}
+  .note-up{color:var(--dark)}
+  .note-dn{color:var(--dark70)}
+
+  .interp-box{background:var(--dark);color:var(--light);border-radius:var(--radius);padding:1.75rem}
+  .interp-box h3{font-family:var(--font);font-size:1.1rem;font-weight:400;margin-bottom:.75rem}
+  .interp-box p{font-size:.875rem;line-height:1.8;opacity:.9}
+
+  .rec-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .rec-item{display:flex;gap:12px;align-items:flex-start;font-size:.875rem;line-height:1.65;padding:10px 12px;background:var(--white);border-radius:6px;border:1px solid var(--dark10)}
+  .rec-dot{width:6px;height:6px;border-radius:50%;background:var(--dark);flex-shrink:0;margin-top:7px}
+
+  .model-note{font-size:11px;color:var(--dark70);border:1px solid var(--dark10);border-radius:6px;padding:12px 14px;line-height:1.65;margin-top:1.25rem;background:var(--dark05)}
+
+  .btn-restart{display:block;width:100%;text-align:center;border:1.5px solid var(--dark20);border-radius:6px;padding:13px;background:transparent;font-family:var(--sans);font-size:.875rem;cursor:pointer;color:var(--dark70);transition:all .2s;margin-top:2rem}
+  .btn-restart:hover{background:var(--dark10);color:var(--dark);border-color:var(--dark)}
+
+  .err-box{background:var(--dark05);border:1px solid var(--dark20);border-radius:var(--radius);padding:2rem;text-align:center;margin:2rem 0}
+  .err-box p{font-size:.875rem;line-height:1.7;color:var(--dark70)}
+  .err-box code{font-size:11.5px;background:var(--dark10);padding:2px 6px;border-radius:3px;color:var(--dark)}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<section class="screen active" id="landing">
+  <div class="heart-icon">♥</div>
+  <h1 class="brand">Cardio<em>Sense</em></h1>
+  <p class="tagline">An explainable AI tool that assesses your cardiovascular risk and tells you exactly why — powered by an ensemble ML model with SHAP and LIME explanations.</p>
+  <div class="pills">
+    <span class="pill">12 clinical questions</span>
+    <span class="pill">XGBoost + Random Forest + LR</span>
+    <span class="pill">SHAP &amp; LIME explanations</span>
+    <span class="pill">No data stored</span>
+  </div>
+  <button class="btn-primary" onclick="startFlow()">Get Started</button>
+  <p class="disclaimer">For informational and research purposes only. This does not constitute medical advice. Always consult a qualified healthcare professional.</p>
+</section>
+
+<!-- QUESTIONS -->
+<section class="screen" id="questions">
+  <div class="q-nav">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+    <span class="q-count" id="qcount">1 / 12</span>
+  </div>
+  <div class="q-card" id="qcard"></div>
+</section>
+
+<!-- LOADING -->
+<section class="screen" id="loading">
+  <div class="spinner"></div>
+  <p class="load-title">Analysing your profile</p>
+  <p class="load-sub">Running ensemble model<br>Generating SHAP &amp; LIME explanations…</p>
+</section>
+
+<!-- RESULTS -->
+<section class="screen" id="results">
+  <div class="results-inner">
+    <div class="results-hero">
+      <div class="risk-badge" id="rbadge"></div>
+      <div class="risk-pct" id="rpct">—</div>
+      <div class="risk-sub">cardiovascular risk probability</div>
+      <svg class="gauge-svg" id="gauge" width="200" height="104" viewBox="0 0 200 104"></svg>
+      <p class="risk-note" id="rnote"></p>
+    </div>
+
+    <p class="section-hd">Key Risk Factors</p>
+    <div class="tab-row">
+      <button class="tab-btn active" id="tab-shap" onclick="switchTab('shap')">SHAP</button>
+      <button class="tab-btn" id="tab-lime" onclick="switchTab('lime')">LIME</button>
+    </div>
+    <div class="feat-list" id="feat-shap"></div>
+    <div class="feat-list" id="feat-lime" style="display:none"></div>
+    <div class="model-note" id="model-note"></div>
+
+    <p class="section-hd">Clinical Interpretation</p>
+    <div class="interp-box"><h3>What this means</h3><p id="interp"></p></div>
+
+    <p class="section-hd">Recommendations</p>
+    <ul class="rec-list" id="recs"></ul>
+
+    <button class="btn-restart" onclick="restart()">← Start over</button>
+  </div>
+</section>
+
+<script>
+const API = 'http://localhost:8000';
+
+const QS = [
+  {key:'age',label:'How old are you?',hint:'Age is an independent risk factor for cardiovascular disease.',type:'slider',min:20,max:80,step:1,def:45,unit:'years'},
+  {key:'gender',label:'What is your biological sex?',hint:'Biological sex influences hormonal cardiovascular risk profiles.',type:'choice',opts:[{l:'Female',s:'',v:0},{l:'Male',s:'',v:1}]},
+  {key:'chestpain',label:'Do you experience chest pain?',hint:'Chest pain character is a strong clinical indicator.',type:'choice',opts:[{l:'Typical Angina',s:'Pressure or squeezing, related to exertion',v:0},{l:'Atypical Angina',s:'Chest pain not fitting typical pattern',v:1},{l:'Non-Anginal Pain',s:'Not related to the heart',v:2},{l:'Asymptomatic',s:'No chest pain at all',v:3}]},
+  {key:'restingBP',label:'What is your resting blood pressure?',hint:'Measured at rest. Normal is below 120 mmHg systolic.',type:'slider',min:90,max:200,step:1,def:120,unit:'mmHg'},
+  {key:'serumcholestrol',label:'What is your serum cholesterol?',hint:'Total serum cholesterol. Desirable is below 200 mg/dl.',type:'slider',min:100,max:564,step:1,def:220,unit:'mg/dl'},
+  {key:'fastingbloodsugar',label:'Is your fasting blood sugar above 120 mg/dl?',hint:'Elevated fasting glucose is linked to diabetes and higher CVD risk.',type:'choice',opts:[{l:'No',s:'120 mg/dl or below',v:0},{l:'Yes',s:'Above 120 mg/dl',v:1}]},
+  {key:'restingrelectro',label:'What are your resting ECG results?',hint:'Electrocardiogram recorded at rest.',type:'choice',opts:[{l:'Normal',s:'No significant abnormalities',v:0},{l:'ST-T Wave Abnormality',s:'T-wave inversions or ST depression/elevation',v:1},{l:'Left Ventricular Hypertrophy',s:'Probable or definite LVH by Estes criteria',v:2}]},
+  {key:'maxheartrate',label:'What is your maximum heart rate achieved?',hint:'Peak heart rate during an exercise stress test.',type:'slider',min:70,max:202,step:1,def:150,unit:'bpm'},
+  {key:'exerciseangia',label:'Do you get chest pain during exercise?',hint:'Exercise-induced angina suggests reduced coronary blood flow under stress.',type:'choice',opts:[{l:'No',s:'No chest pain during physical activity',v:0},{l:'Yes',s:'Chest pain occurs with exertion',v:1}]},
+  {key:'oldpeak',label:'ST depression induced by exercise (relative to rest)?',hint:'ST segment depression on ECG during exercise stress test.',type:'slider',min:0,max:6.2,step:0.1,def:1.0,unit:''},
+  {key:'slope',label:'What is the slope of your peak exercise ST segment?',hint:'Pattern of the ST segment at peak exercise on ECG.',type:'choice',opts:[{l:'Upsloping',s:'Least concerning — normal response',v:0},{l:'Flat',s:'Moderate concern',v:1},{l:'Downsloping',s:'Most concerning — suggests ischaemia',v:2},{l:'Not Applicable / Unknown',s:'Stress test not performed',v:3}]},
+  {key:'noofmajorvessels',label:'Major vessels coloured by fluoroscopy?',hint:'Number of major coronary arteries with visible narrowing.',type:'choice',opts:[{l:'0 vessels',s:'No significant stenosis detected',v:0},{l:'1 vessel',s:'Single vessel disease',v:1},{l:'2 vessels',s:'Two-vessel disease',v:2},{l:'3 vessels',s:'Three-vessel disease',v:3}]}
+];
+
+let cur=0, ans={}, selVal=null, apiResult=null;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active')});
+  document.getElementById(id).classList.add('active');
+}
+
+function startFlow(){cur=0;ans={};selVal=null;show('questions');renderQ();}
+function restart(){startFlow();}
+function goBack(){
+  if(cur===0){show('landing');return;}
+  cur--;
+  selVal=ans[QS[cur].key]!==undefined?ans[QS[cur].key]:null;
+  renderQ();
+}
+
+function renderQ(){
+  const q=QS[cur];
+  // Read current answer from ans (already saved by pick() or advance())
+  selVal=ans[q.key]!==undefined?ans[q.key]:null;
+
+  document.getElementById('prog').style.width=((cur/QS.length)*100)+'%';
+  document.getElementById('qcount').textContent=(cur+1)+' / '+QS.length;
+
+  let h=`<p class="q-step">Question ${cur+1} of ${QS.length}</p>
+          <p class="q-text">${q.label}</p>
+          <p class="q-hint">${q.hint}</p>`;
+
+  if(q.type==='choice'){
+    h+='<div class="choices">';
+    q.opts.forEach((o,i)=>{
+      const s=selVal!==null&&selVal===o.v;
+      h+=`<button class="choice${s?' sel':''}" onclick="pick(${o.v})">
+        <span class="choice-ltr">${String.fromCharCode(65+i)}</span>
+        <span class="choice-body"><strong>${o.l}</strong>${o.s?`<small>${o.s}</small>`:''}</span>
+      </button>`;
+    });
+    h+='</div>';
+    h+=`<button class="btn-next" ${selVal===null?'disabled':''} onclick="advance()">Continue →</button>`;
+  } else {
+    const val=ans[q.key]!==undefined?ans[q.key]:q.def;
+    const disp=q.step<1?parseFloat(val).toFixed(1):parseInt(val);
+    h+=`<div class="slider-wrap">
+      <div class="slider-val"><span id="sv">${disp}</span><span class="slider-unit">${q.unit}</span></div>
+      <input type="range" min="${q.min}" max="${q.max}" step="${q.step}" value="${val}" oninput="sliderMove(this)">
+      <div class="slider-minmax"><span>${q.min}${q.unit?' '+q.unit:''}</span><span>${q.max}${q.unit?' '+q.unit:''}</span></div>
+    </div>
+    <button class="btn-next" onclick="advance()">Continue →</button>`;
+    // Ensure ans always has the slider value even if user doesn't move it
+    if(ans[q.key]===undefined) ans[q.key]=parseFloat(val);
+  }
+
+  const card=document.getElementById('qcard');
+  card.style.animation='none';
+  card.offsetHeight; // force reflow
+  card.style.animation='fadeUp .3s ease forwards';
+  card.innerHTML=h;
+}
+
+// ── BUG FIX: save to ans immediately so renderQ() can read it back ──
+function pick(v){
+  ans[QS[cur].key]=v;
+  selVal=v;
+  renderQ();
+}
+
+function sliderMove(el){
+  const q=QS[cur];
+  ans[q.key]=parseFloat(el.value);
+  document.getElementById('sv').textContent=q.step<1?parseFloat(el.value).toFixed(1):parseInt(el.value);
+}
+
+function advance(){
+  const q=QS[cur];
+  if(q.type==='choice'){
+    if(selVal===null)return;
+    ans[q.key]=selVal;
+  } else {
+    const sl=document.querySelector('input[type=range]');
+    if(sl) ans[q.key]=parseFloat(sl.value);
+  }
+  cur++;
+  if(cur>=QS.length){
+    runAnalysis();
+  } else {
+    selVal=null;
+    renderQ();
+  }
+}
+
+async function runAnalysis(){
+  show('loading');
+  const payload={
+    age:ans.age,
+    gender:ans.gender,
+    chestpain:ans.chestpain,
+    restingBP:ans.restingBP,
+    serumcholestrol:ans.serumcholestrol,
+    fastingbloodsugar:ans.fastingbloodsugar,
+    restingrelectro:ans.restingrelectro,
+    maxheartrate:ans.maxheartrate,
+    exerciseangia:ans.exerciseangia,
+    oldpeak:parseFloat(parseFloat(ans.oldpeak).toFixed(1)),
+    slope:ans.slope,
+    noofmajorvessels:ans.noofmajorvessels
+  };
+
+  try{
+    const r=await fetch(API+'/explain/both',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok) throw new Error('API error '+r.status);
+    apiResult=await r.json();
+    renderResults(apiResult);
+  } catch(e){
+    renderErr(e.message);
+  }
+}
+
+function renderErr(msg){
+  show('results');
+  const badge=document.getElementById('rbadge');
+  badge.textContent='Connection Error';
+  badge.className='risk-badge badge-mod';
+  document.getElementById('rpct').textContent='—';
+  document.getElementById('gauge').innerHTML='';
+  document.getElementById('rnote').textContent='';
+  document.getElementById('feat-shap').innerHTML=`
+    <div class="err-box">
+      <p>Could not reach the CardioSense API.<br><br>
+      Make sure your backend is running:<br>
+      <code>uvicorn app:app --reload --host 0.0.0.0 --port 8000</code><br><br>
+      Error: ${msg}</p>
+    </div>`;
+  document.getElementById('feat-lime').innerHTML='';
+  document.getElementById('model-note').textContent='';
+  document.getElementById('interp').textContent='Start the API server and try again.';
+  document.getElementById('recs').innerHTML='';
+}
+
+function drawGauge(pct){
+  const svg=document.getElementById('gauge');
+  const r=80,cx=100,cy=100;
+  const startAngle=-Math.PI;
+  const endAngle=0;
+  const fillAngle=startAngle+(endAngle-startAngle)*(pct/100);
+  const sx=cx+r*Math.cos(startAngle),sy=cy+r*Math.sin(startAngle);
+  const ex=cx+r*Math.cos(endAngle),ey=cy+r*Math.sin(endAngle);
+  const fx=cx+r*Math.cos(fillAngle),fy=cy+r*Math.sin(fillAngle);
+  const lg=fillAngle>startAngle+(endAngle-startAngle)*0.5?1:0;
+  svg.innerHTML=`
+    <path d="M${sx},${sy} A${r},${r} 0 1,1 ${ex},${ey}" fill="none" stroke="rgba(64,65,93,.1)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M${sx},${sy} A${r},${r} 0 ${lg},1 ${fx},${fy}" fill="none" stroke="#40415D" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="5.5" fill="#40415D"/>`;
+}
+
+function buildFeatHtml(features){
+  if(!features||!features.length) return '<p style="font-size:.85rem;color:var(--dark70)">No feature data returned.</p>';
+  const mx=Math.max(...features.map(f=>f.importance),0.001);
+  return features.slice(0,8).map(f=>{
+    const p=Math.round((f.importance/mx)*100);
+    const up=f.direction==='increases';
+    return `<div class="feat-row">
+      <div class="feat-top">
+        <span class="feat-name">${f.display_name}</span>
+        <span class="feat-val">${f.value}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill ${up?'bar-up':'bar-down'}" style="width:${p}%"></div></div>
+      <div class="feat-note ${up?'note-up':'note-dn'}">${up?'↑ Increases':'↓ Decreases'} risk</div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(t){
+  document.getElementById('feat-shap').style.display=t==='shap'?'flex':'none';
+  document.getElementById('feat-lime').style.display=t==='lime'?'flex':'none';
+  document.getElementById('tab-shap').className='tab-btn'+(t==='shap'?' active':'');
+  document.getElementById('tab-lime').className='tab-btn'+(t==='lime'?' active':'');
+}
+
+const NOTES={
+  Low:'Your clinical profile suggests a lower probability of cardiovascular disease. Maintain a healthy lifestyle and attend regular check-ups.',
+  Moderate:'Your profile shows several risk factors that warrant attention. Further clinical evaluation is recommended.',
+  High:'Your profile indicates a high probability of cardiovascular disease. Prompt consultation with a cardiologist is strongly advised.'
+};
+
+const RECS={
+  Low:['Maintain regular aerobic exercise (150 min/week)','Follow a heart-healthy diet low in saturated fats','Monitor blood pressure and cholesterol annually','Avoid smoking and limit alcohol consumption'],
+  Moderate:['Schedule a cardiology consultation for further evaluation','Discuss statin therapy with your physician if cholesterol is elevated','Begin or increase structured cardiovascular exercise','Monitor blood glucose levels if fasting sugar was elevated'],
+  High:['Seek urgent cardiology consultation — do not delay','Discuss pharmacological intervention (statins, beta-blockers, ACE inhibitors)','Consider stress echocardiography or coronary angiography','Strictly avoid smoking; adopt a low-sodium, low-fat diet immediately']
+};
+
+function renderResults(data){
+  show('results');
+  const pct=data.risk_percent||Math.round(data.probability*100);
+  const lvl=data.risk_level||'Unknown';
+
+  const badge=document.getElementById('rbadge');
+  badge.textContent=lvl+' Risk';
+  badge.className='risk-badge '+(lvl==='High'?'badge-high':lvl==='Moderate'?'badge-mod':'badge-low');
+
+  document.getElementById('rpct').textContent=pct+'%';
+  document.getElementById('rnote').textContent=NOTES[lvl]||'';
+  drawGauge(pct);
+
+  document.getElementById('feat-shap').innerHTML=buildFeatHtml(data.shap&&data.shap.feature_importance);
+  document.getElementById('feat-shap').style.display='flex';
+
+  document.getElementById('feat-lime').innerHTML=buildFeatHtml(data.lime&&data.lime.feature_importance);
+  document.getElementById('feat-lime').style.display='none';
+
+  document.getElementById('model-note').textContent=
+    `Ensemble: XGBoost + Random Forest + Logistic Regression · SHAP (kernel explainer) · LIME (local linear fit)`;
+
+  const top=data.shap&&data.shap.feature_importance&&data.shap.feature_importance[0];
+  const topName=top?top.display_name:'—';
+  const topDir=top?top.direction:'—';
+  document.getElementById('interp').textContent=
+    `The ensemble model assigned a ${pct}% probability of cardiovascular disease. `+
+    `The single most influential factor was ${topName}, which ${topDir} risk. `+
+    `${lvl==='High'?'Multiple high-risk indicators are present — this pattern strongly aligns with CVD-positive cases in the training data.':lvl==='Moderate'?'Some risk factors are elevated but not all indicators point to disease — further clinical tests would help clarify the picture.':'Most clinical indicators fall within healthy ranges, giving a relatively reassuring profile.'}`;
+
+  const recItems=(RECS[lvl]||[]).map(r=>`<li class="rec-item"><span class="rec-dot"></span><span>${r}</span></li>`).join('');
+  document.getElementById('recs').innerHTML=recItems;
+}
+</script>
+</body>
+</html>
