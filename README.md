@@ -10,7 +10,14 @@ CardioSense takes 12 clinical inputs, runs them through a soft-voting ensemble o
 
 > Start the API, open `cardiosense_local_api.html` in any browser, and answer 12 questions to get your risk report.
 
-![CardioSense App Screenshot](screenshot.png)
+### Landing Page
+![CardioSense Landing Page](landing.png)
+
+### Risk Analysis & Explainability (SHAP/LIME)
+![CardioSense Results](results.png)
+
+### API Documentation (Swagger)
+![CardioSense API Docs](api_docs.png)
 
 ![Risk Report](https://img.shields.io/badge/risk--report-SHAP%20%2B%20LIME-40415D?style=flat-square)
 ![Python](https://img.shields.io/badge/python-3.10%2B-40415D?style=flat-square)
