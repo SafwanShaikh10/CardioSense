@@ -6,6 +6,15 @@ CardioSense takes 12 clinical inputs, runs them through a soft-voting ensemble o
 
 ---
 
+## Project Status
+
+- **Model Performance**: 98% accuracy and 0.9994 ROC-AUC on hold-out test set.
+- **Artifacts**: All model artifacts (ensemble_model.joblib, scaler.joblib, metadata.joblib) have been generated and validated.
+- **Backend**: FastAPI server is operational with SHAP and LIME explanation endpoints.
+- **Repository**: Code and training scripts are synchronized with the GitHub main branch.
+
+---
+
 ## Demo
 
 > Start the API, open `cardiosense_local_api.html` in any browser, and answer 12 questions to get your risk report.
