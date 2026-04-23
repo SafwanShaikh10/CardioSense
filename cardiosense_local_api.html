@@ -139,6 +139,24 @@
   .err-box{background:var(--dark05);border:1px solid var(--dark20);border-radius:var(--radius);padding:2rem;text-align:center;margin:2rem 0}
   .err-box p{font-size:.875rem;line-height:1.7;color:var(--dark70)}
   .err-box code{font-size:11.5px;background:var(--dark10);padding:2px 6px;border-radius:3px;color:var(--dark)}
+
+  /* ── ACTION PLAN CARDS ── */
+  .action-cards{display:flex;flex-direction:column;gap:20px}
+  .action-card{background:var(--white);border:1px solid var(--dark20);border-radius:var(--radius);overflow:hidden}
+  .action-card-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--dark10);background:var(--dark05)}
+  .action-card-title{font-size:.9rem;font-weight:600;color:var(--dark)}
+  .action-card-val{font-size:.78rem;color:var(--dark70);background:var(--dark10);padding:2px 10px;border-radius:999px}
+  .confirmed-badge{font-size:9.5px;letter-spacing:.4px;color:var(--dark);background:var(--dark20);border-radius:999px;padding:3px 10px;text-transform:uppercase;font-weight:600}
+  .action-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+  @media(max-width:520px){.action-cols{grid-template-columns:1fr}}
+  .action-col{padding:14px 15px;border-right:1px solid var(--dark10)}
+  .action-col:last-child{border-right:none}
+  .action-col-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dark40);margin-bottom:10px;font-weight:600}
+  .action-col ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+  .action-col li{font-size:.78rem;color:var(--dark);line-height:1.55;padding-left:10px;position:relative}
+  .action-col li::before{content:'';position:absolute;left:0;top:7px;width:4px;height:4px;border-radius:50%;background:var(--dark40)}
+  .meal-tag{display:inline-block;font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--dark70);font-weight:600;margin-right:4px}
+  .no-plan-note{font-size:.85rem;color:var(--dark70);padding:1.25rem;background:var(--dark05);border-radius:6px;line-height:1.7}
 </style>
 </head>
 <body>
@@ -198,7 +216,10 @@
     <p class="section-hd">Clinical Interpretation</p>
     <div class="interp-box"><h3>What this means</h3><p id="interp"></p></div>
 
-    <p class="section-hd">Recommendations</p>
+    <p class="section-hd" id="action-plan-hd">Your Personalized Action Plan</p>
+    <div class="action-cards" id="action-plan-container"></div>
+
+    <p class="section-hd">General Guidance</p>
     <ul class="rec-list" id="recs"></ul>
 
     <button class="btn-restart" onclick="restart()">← Start over</button>
@@ -405,6 +426,69 @@ function switchTab(t){
   document.getElementById('tab-lime').className='tab-btn'+(t==='lime'?' active':'');
 }
 
+const FEATURE_ADVICE = {
+  restingBP: {
+    diet: ["Breakfast: Oatmeal with flaxseeds and bananas (low sodium, high potassium)","Lunch: Grilled chicken salad with leafy greens and lemon-tahini dressing","Dinner: Baked salmon with steamed broccoli and quinoa (DASH diet compliant)"],
+    exercise: ["Brisk walking: 30 minutes, 5 days a week","Swimming or water aerobics to reduce joint impact","Light cycling on flat terrain"],
+    yoga: ["Pranayama (Deep Breathing): Helps regulate blood pressure","Shavasana (Corpse Pose): Promotes deep relaxation","Avoid inverted poses if blood pressure is uncontrolled"]
+  },
+  serumcholestrol: {
+    diet: ["Breakfast: Overnight oats with chia seeds and walnuts (high soluble fiber)","Lunch: Lentil soup with a side of kale salad","Dinner: Tofu stir-fry with mixed vegetables and brown rice (low saturated fat)"],
+    exercise: ["Daily aerobic activity: 30-40 minutes","Jogging or brisk uphill walking","Resistance training 2-3 times per week"],
+    yoga: ["Kapalbhati Pranayama: Improves metabolism and lipid profile","Surya Namaskar (Sun Salutation): Dynamic movement to burn calories","Paschimottanasana (Seated Forward Bend)"]
+  },
+  fastingbloodsugar: {
+    diet: ["Breakfast: Greek yogurt with berries and a sprinkle of cinnamon (low GI)","Lunch: Chickpea and spinach curry with minimal oil","Dinner: Grilled fish with cauliflower rice and roasted asparagus"],
+    exercise: ["Resistance training to improve insulin sensitivity","Post-meal 10-minute walk to help manage glucose spikes","Stair climbing or lunges"],
+    yoga: ["Mandukasana (Frog Pose): Specifically beneficial for the pancreas","Ardha Matsyendrasana (Half Fish Pose)","Vajrasana (Thunderbolt Pose) after meals"]
+  },
+  chestpain: {
+    diet: ["Breakfast: Berry smoothie with almond milk and spinach","Lunch: Vegetable wrap with hummus and avocado","Dinner: Mediterranean-style baked cod with tomatoes and olives"],
+    exercise: ["Light supervised activity only","Brief, slow-paced walks on level ground","Avoid heavy lifting or sudden movements"],
+    yoga: ["Anulom Vilom (Alternate Nostril Breathing)","Tadasana (Mountain Pose) for gentle stretching","Avoid any strenuous or rapid movements"]
+  },
+  exerciseangia: {
+    diet: ["Breakfast: Whole grain toast with mashed avocado and tomato","Lunch: Quinoa and black bean bowl with peppers","Dinner: Lean turkey breast with zucchini noodles"],
+    exercise: ["Supervised cardiac rehabilitation program","Stop exercise immediately if discomfort occurs","Very gradual warm-up and cool-down periods"],
+    yoga: ["Sukhasana (Easy Pose) with focus on gentle breathing","Gentle neck and shoulder rotations","Restorative yoga using bolsters for support"]
+  },
+  oldpeak: {
+    diet: ["Breakfast: Chia pudding with unsweetened almond milk and raspberries","Lunch: Mixed bean salad with vinaigrette","Dinner: Roasted chicken with sweet potato and green beans"],
+    exercise: ["Gradual graded exercise test recommended","Avoid high-intensity intervals or sprinting","Consistency over intensity is key"],
+    yoga: ["Nadi Shodhana (Channel Cleaning Breath)","Shishuasana (Child's Pose) for stress relief","Viparita Karani (Legs Up the Wall)"]
+  },
+  slope: {
+    diet: ["Breakfast: Scrambled egg whites with spinach and whole grain crackers","Lunch: Tuna salad with olive oil and cucumber","Dinner: Lentil pasta with marinara and plenty of vegetables"],
+    exercise: ["Consult a physician before starting new routines","Low-impact cardio like rowing or elliptical","Avoid exercises that require sudden changes in posture"],
+    yoga: ["Yoga Nidra for deep mental and physical recovery","Mindfulness meditation to reduce cardiac strain","Gentle Cat-Cow stretches"]
+  },
+  noofmajorvessels: {
+    diet: ["Breakfast: Fruit bowl with papaya, melon, and flaxseeds","Lunch: Brown rice with steamed dal and sautéed greens","Dinner: Clear vegetable soup with a side of steamed sprouts"],
+    exercise: ["Light indoor walking to monitor stability","Avoid extreme temperatures while exercising","Short, frequent sessions (5-10 mins) multiple times a day"],
+    yoga: ["Focus on meditative poses like Padmasana","Deep abdominal breathing to improve oxygenation","Gentle joint movements (Sukshma Vyayama)"]
+  },
+  restingrelectro: {
+    diet: ["Breakfast: Banana and walnut smoothie","Lunch: Spinach and cottage cheese (Palak Paneer) with minimal fat","Dinner: Grilled chicken with sautéed mushrooms and peas"],
+    exercise: ["Moderate pace walking or gentle swimming","Avoid caffeine or stimulants before exercise","Listen to your heart rhythm; stop if palpitations occur"],
+    yoga: ["Brahmari Pranayama (Bee Breath): Calms the nervous system","Marjariasana (Cat Pose)","Avoid intense heat yoga (Bikram)"]
+  },
+  maxheartrate: {
+    diet: ["Breakfast: Steel-cut oats with blueberries and pumpkin seeds","Lunch: Beetroot and carrot salad with a light vinaigrette","Dinner: Poached salmon with asparagus and brown rice"],
+    exercise: ["Interval training to improve heart rate recovery","Monitor heart rate using a wearable device","Gradually increase intensity over several weeks"],
+    yoga: ["Surya Bhedana Pranayama","Virabhadrasana (Warrior Pose) for strength","Ensure adequate hydration and cooling down"]
+  },
+  age: {
+    diet: ["Breakfast: Papaya and a small handful of almonds","Lunch: Whole grain roti with mixed vegetable curry","Dinner: Vegetable khichdi (lentils and rice) for easy digestion"],
+    exercise: ["Low-impact activities: Swimming, Tai Chi, or walking","Balance and flexibility exercises to prevent falls","Water aerobics"],
+    yoga: ["Trikonasana (Triangle Pose) for flexibility","Vrikshasana (Tree Pose) for balance","Gentle seated stretches"]
+  },
+  gender: {
+    diet: ["Breakfast: High-protein omelet with plenty of vegetables","Lunch: Grilled chicken breast with broccoli and brown rice","Dinner: Baked fish with a large green salad"],
+    exercise: ["Combination of aerobic cardio and strength training","Focus on building lean muscle mass","Regular vigorous activity 3 times per week"],
+    yoga: ["Surya Namaskar for overall vitality","Bhujangasana (Cobra Pose)","Focus on core and upper body strength"]
+  }
+};
+
 const NOTES={
   Low:'Your clinical profile suggests a lower probability of cardiovascular disease. Maintain a healthy lifestyle and attend regular check-ups.',
   Moderate:'Your profile shows several risk factors that warrant attention. Further clinical evaluation is recommended.',
@@ -416,6 +500,49 @@ const RECS={
   Moderate:['Schedule a cardiology consultation for further evaluation','Discuss statin therapy with your physician if cholesterol is elevated','Begin or increase structured cardiovascular exercise','Monitor blood glucose levels if fasting sugar was elevated'],
   High:['Seek urgent cardiology consultation — do not delay','Discuss pharmacological intervention (statins, beta-blockers, ACE inhibitors)','Consider stress echocardiography or coronary angiography','Strictly avoid smoking; adopt a low-sodium, low-fat diet immediately']
 };
+
+function buildActionPlan(data){
+  const shapTop = data.shap.feature_importance.filter(f => f.direction === 'increases').slice(0, 5);
+  const limeTop = data.lime.feature_importance.filter(f => f.direction === 'increases').slice(0, 5);
+  const limeKeys = new Set(limeTop.map(f => f.feature));
+  
+  if(!shapTop.length) return '<p class="no-plan-note">Based on your clinical profile, no specific high-risk parameters were identified for targeted intervention. Follow the general guidance below.</p>';
+
+  return shapTop.map(f => {
+    const advice = FEATURE_ADVICE[f.feature];
+    if(!advice) return '';
+    const isBoth = limeKeys.has(f.feature);
+
+    return `
+      <div class="action-card">
+        <div class="action-card-hd">
+          <div>
+            <span class="action-card-title">${f.display_name}</span>
+            ${isBoth ? '<span class="confirmed-badge">Confirmed by SHAP + LIME</span>' : ''}
+          </div>
+          <span class="action-card-val">${f.value}</span>
+        </div>
+        <div class="action-cols">
+          <div class="action-col">
+            <div class="action-col-label">Diet & Meals</div>
+            <ul>
+              <li><span class="meal-tag">Bf</span>${advice.diet[0].split(': ')[1]}</li>
+              <li><span class="meal-tag">Ln</span>${advice.diet[1].split(': ')[1]}</li>
+              <li><span class="meal-tag">Dn</span>${advice.diet[2].split(': ')[1]}</li>
+            </ul>
+          </div>
+          <div class="action-col">
+            <div class="action-col-label">Exercise</div>
+            <ul>${advice.exercise.map(e => `<li>${e}</li>`).join('')}</ul>
+          </div>
+          <div class="action-col">
+            <div class="action-col-label">Yoga & Lifestyle</div>
+            <ul>${advice.yoga.map(y => `<li>${y}</li>`).join('')}</ul>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
 
 function renderResults(data){
   show('results');
@@ -446,6 +573,9 @@ function renderResults(data){
     `The ensemble model assigned a ${pct}% probability of cardiovascular disease. `+
     `The single most influential factor was ${topName}, which ${topDir} risk. `+
     `${lvl==='High'?'Multiple high-risk indicators are present — this pattern strongly aligns with CVD-positive cases in the training data.':lvl==='Moderate'?'Some risk factors are elevated but not all indicators point to disease — further clinical tests would help clarify the picture.':'Most clinical indicators fall within healthy ranges, giving a relatively reassuring profile.'}`;
+
+  // Action Plan
+  document.getElementById('action-plan-container').innerHTML = buildActionPlan(data);
 
   const recItems=(RECS[lvl]||[]).map(r=>`<li class="rec-item"><span class="rec-dot"></span><span>${r}</span></li>`).join('');
   document.getElementById('recs').innerHTML=recItems;
