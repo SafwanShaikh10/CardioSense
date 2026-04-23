@@ -25,6 +25,10 @@ CardioSense takes 12 clinical inputs, runs them through a soft-voting ensemble o
 ### Risk Analysis & Explainability (SHAP/LIME)
 ![CardioSense Results](results.png)
 
+### Personalized Action Plan (Meals, Exercise, Yoga)
+![Action Plan 1](action_plan_1.png)
+![Action Plan 2](action_plan_2.png)
+
 ### API Documentation (Swagger)
 ![CardioSense API Docs](api_docs.png)
 
@@ -39,6 +43,7 @@ CardioSense takes 12 clinical inputs, runs them through a soft-voting ensemble o
 
 - **Ensemble model** - XGBoost + Random Forest + Logistic Regression with soft voting
 - **Dual explainability** - SHAP (global fidelity) and LIME (local linear approximation) on every prediction
+- **Personalized Action Plan** - Targeted advice for diet (3-meal plans), exercise, and yoga per risk factor
 - **Zero-friction frontend** - single HTML file, no build step, no dependencies
 - **FastAPI backend** - typed endpoints, automatic Swagger docs, CORS-ready
 - **Auto-training** - model trains itself on first startup if no saved artifacts exist
