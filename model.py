@@ -37,7 +37,7 @@ from xgboost import XGBClassifier
 # Paths
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent
 DATASET_PATH = PROJECT_ROOT / "Cardiovascular_Disease_Dataset.csv"
 ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
 MODEL_PATH = ARTIFACTS_DIR / "ensemble_model.joblib"
@@ -442,14 +442,30 @@ def explain_shap(
     patient_data: Dict[str, Any],
     bundle: ModelBundle,
 ) -> Dict[str, Any]:
-    """Generate SHAP values and ranked feature importance for one patient."""
+    """Generate SHAP values and ranked feature importance for one patient.
+
+    Uses KernelExplainer explicitly with a single-output wrapper that returns
+    only P(CVD=1).  This is more reliable than shap.Explainer for
+    VotingClassifier — the generic dispatcher picks PermutationExplainer
+    (>=0.45) which gives near-constant attribution across patients.
+    """
 
     prediction_payload = predict_patient(patient_data, bundle)
     background = np.asarray(bundle.metadata["background_data"], dtype=float)
-    explainer = shap.Explainer(bundle.model.predict_proba, background)
-    shap_result = explainer(prediction_payload["transformed"])
-    positive_class = shap_result[..., 1]
-    shap_values = positive_class.values[0]
+
+    # Single-output wrapper: KernelExplainer needs a scalar-per-sample function
+    def predict_positive_proba(x: np.ndarray) -> np.ndarray:
+        return bundle.model.predict_proba(x)[:, 1]
+
+    explainer = shap.KernelExplainer(predict_positive_proba, background)
+    # nsamples=100 keeps latency acceptable; increase for higher fidelity
+    raw_shap = explainer.shap_values(
+        prediction_payload["transformed"], nsamples=100, silent=True
+    )
+    # KernelExplainer returns shape (n_samples, n_features) for scalar output
+    shap_values = np.asarray(raw_shap).reshape(-1)
+    base_value = sanitize_float(explainer.expected_value)
+
     feature_names = bundle.metadata["feature_columns"]
     display_names = bundle.metadata.get("feature_display_names", {})
 
@@ -473,9 +489,7 @@ def explain_shap(
         "method": "SHAP",
         "prediction": prediction_payload["prediction"],
         "probability": prediction_payload["probability"],
-        "base_value": sanitize_float(
-            np.asarray(positive_class.base_values).reshape(-1)[0]
-        ),
+        "base_value": base_value,
         "shap_values": [sanitize_float(sv) for sv in shap_values],
         "feature_importance": ranked_features,
     }
@@ -531,23 +545,23 @@ def explain_lime(
         labels=(1,),
     )
 
-    lime_map: Dict[str, float] = {
-        feat: weight
-        for feat, weight in explanation.as_map()[1]  # class index 1 = CVD
+    lime_map: Dict[int, float] = {
+        int(feat_idx): weight
+        for feat_idx, weight in explanation.as_map()[1]  # class index 1 = CVD
     }
 
     # Build ranked list using feature index → name mapping
     ranked_features = sorted(
         [
             {
-                "feature": feature_names[idx],
-                "display_name": display_names.get(feature_names[idx], feature_names[idx]),
-                "value": readable_value(feature_names[idx], patient_data.get(feature_names[idx], 0)),
-                "lime_weight": sanitize_float(lime_map.get(idx, 0.0)),
-                "importance": abs(sanitize_float(lime_map.get(idx, 0.0))),
-                "direction": "increases" if sanitize_float(lime_map.get(idx, 0.0)) > 0 else "decreases",
+                "feature": feature_names[feat_idx],
+                "display_name": display_names.get(feature_names[feat_idx], feature_names[feat_idx]),
+                "value": readable_value(feature_names[feat_idx], patient_data.get(feature_names[feat_idx], 0)),
+                "lime_weight": sanitize_float(lime_map.get(feat_idx, 0.0)),
+                "importance": abs(sanitize_float(lime_map.get(feat_idx, 0.0))),
+                "direction": "increases" if sanitize_float(lime_map.get(feat_idx, 0.0)) > 0 else "decreases",
             }
-            for idx in lime_map
+            for feat_idx in lime_map
         ],
         key=lambda item: item["importance"],
         reverse=True,
