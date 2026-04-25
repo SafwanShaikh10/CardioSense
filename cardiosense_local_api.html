@@ -157,6 +157,36 @@
   .action-col li::before{content:'';position:absolute;left:0;top:7px;width:4px;height:4px;border-radius:50%;background:var(--dark40)}
   .meal-tag{display:inline-block;font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--dark70);font-weight:600;margin-right:4px}
   .no-plan-note{font-size:.85rem;color:var(--dark70);padding:1.25rem;background:var(--dark05);border-radius:6px;line-height:1.7}
+
+  /* ── RISK CONSEQUENCES ── */
+  .risk-consequences{margin-top:1.5rem;border:1px solid var(--dark20);border-radius:var(--radius);overflow:hidden}
+  .risk-consequences-hd{background:var(--dark);color:var(--light);padding:12px 16px;font-size:10px;letter-spacing:1.6px;text-transform:uppercase}
+  .risk-level-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--dark10)}
+  @media(max-width:520px){.risk-level-row{grid-template-columns:1fr}}
+  .risk-level-col{padding:14px 15px;border-right:1px solid var(--dark10)}
+  .risk-level-col:last-child{border-right:none}
+  .risk-level-name{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;margin-bottom:8px}
+  .risk-level-name.low{color:var(--dark40)}
+  .risk-level-name.mod{color:var(--dark70)}
+  .risk-level-name.high{color:var(--dark)}
+  .risk-level-col.active-risk{background:var(--dark05)}
+  .risk-level-col ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+  .risk-level-col li{font-size:.76rem;color:var(--dark);line-height:1.5;padding-left:11px;position:relative}
+  .risk-level-col li::before{content:'';position:absolute;left:0;top:6px;width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5}
+
+  /* ── FACTOR CONSEQUENCES ── */
+  .factor-consequence-cards{display:flex;flex-direction:column;gap:14px}
+  .fcon-card{border:1px solid var(--dark20);border-radius:var(--radius);overflow:hidden}
+  .fcon-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--dark05);border-bottom:1px solid var(--dark10)}
+  .fcon-title{font-size:.85rem;font-weight:600;color:var(--dark)}
+  .fcon-val{font-size:.76rem;background:var(--dark10);color:var(--dark70);padding:2px 9px;border-radius:999px}
+  .fcon-body{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:480px){.fcon-body{grid-template-columns:1fr}}
+  .fcon-col-label{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--dark40);font-weight:600;margin-bottom:7px}
+  .fcon-col ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+  .fcon-col li{font-size:.77rem;color:var(--dark);line-height:1.5;padding-left:11px;position:relative}
+  .fcon-col li::before{content:'';position:absolute;left:0;top:6px;width:4px;height:4px;border-radius:50%;background:var(--dark);opacity:.4}
+  .fcon-warning{font-size:.75rem;color:var(--dark70);background:var(--dark05);border-top:1px solid var(--dark10);padding:8px 14px;line-height:1.5;font-style:italic}
 </style>
 </head>
 <body>
@@ -202,7 +232,11 @@
       <div class="risk-sub">cardiovascular risk probability</div>
       <svg class="gauge-svg" id="gauge" width="200" height="104" viewBox="0 0 200 104"></svg>
       <p class="risk-note" id="rnote"></p>
+      <div id="risk-consequences-container"></div>
     </div>
+
+    <p class="section-hd">What You May Face Without Precautions</p>
+    <div class="factor-consequence-cards" id="factor-consequences-container"></div>
 
     <p class="section-hd">Key Risk Factors</p>
     <div class="tab-row">
@@ -243,6 +277,150 @@ const QS = [
   {key:'slope',label:'What is the slope of your peak exercise ST segment?',hint:'Pattern of the ST segment at peak exercise on ECG.',type:'choice',opts:[{l:'Upsloping',s:'Least concerning — normal response',v:0},{l:'Flat',s:'Moderate concern',v:1},{l:'Downsloping',s:'Most concerning — suggests ischaemia',v:2},{l:'Not Applicable / Unknown',s:'Stress test not performed',v:3}]},
   {key:'noofmajorvessels',label:'Major vessels coloured by fluoroscopy?',hint:'Number of major coronary arteries with visible narrowing.',type:'choice',opts:[{l:'0 vessels',s:'No significant stenosis detected',v:0},{l:'1 vessel',s:'Single vessel disease',v:1},{l:'2 vessels',s:'Two-vessel disease',v:2},{l:'3 vessels',s:'Three-vessel disease',v:3}]}
 ];
+
+const RISK_CONSEQUENCES = {
+  Low: {
+    label: 'Low Risk',
+    summary: 'Your current profile is within a lower-risk range. Some baseline vigilance is still important.',
+    conditions: [
+      'Mild arterial stiffness may develop over time without lifestyle changes',
+      'Gradually increasing blood pressure if diet and exercise are not managed',
+      'Early-stage metabolic syndrome if blood sugar and weight are not monitored'
+    ]
+  },
+  Moderate: {
+    label: 'Moderate Risk',
+    summary: 'Several of your indicators are elevated. Without intervention, these can progress to serious conditions.',
+    conditions: [
+      'Coronary Artery Disease (CAD) — plaque buildup in arteries restricting blood flow',
+      'Hypertension complications — including kidney damage and vision loss',
+      'Peripheral Artery Disease — reduced circulation in limbs',
+      'Pre-diabetes or Type 2 Diabetes — if blood sugar is elevated',
+      'Arrhythmia — irregular heart rhythms due to electrical changes in the heart'
+    ]
+  },
+  High: {
+    label: 'High Risk',
+    summary: 'Your profile strongly matches CVD-positive patterns. Without prompt medical attention, the following may occur.',
+    conditions: [
+      'Myocardial Infarction (Heart Attack) — blockage of blood to heart muscle',
+      'Ischemic Stroke — blood clot blocking a brain artery, causing paralysis or death',
+      'Heart Failure — the heart can no longer pump blood effectively',
+      'Sudden Cardiac Death — cardiac arrest from electrical malfunction',
+      'Aortic Aneurysm — dangerous bulging of the main artery from chronic high pressure',
+      'Renal (Kidney) Failure — from sustained high blood pressure damage',
+      'Acute Coronary Syndrome — severe chest pain requiring emergency intervention'
+    ]
+  }
+};
+
+const FACTOR_CONSEQUENCES = {
+  restingBP: {
+    shortTerm: ['Persistent headaches and dizziness','Blurred vision from retinal pressure','Nosebleeds'],
+    longTerm: ['Hypertensive heart disease and left ventricular hypertrophy','Stroke — hemorrhagic or ischemic','Chronic kidney disease from damaged nephrons','Aortic dissection in severe cases'],
+    warning: 'Blood pressure above 140/90 mmHg for extended periods is one of the leading silent killers worldwide.'
+  },
+  serumcholestrol: {
+    shortTerm: ['No obvious symptoms — cholesterol buildup is silent','Fatty deposits (xanthomas) under skin in some cases'],
+    longTerm: ['Atherosclerosis — hardening and narrowing of arteries','Angina — chest pain from reduced coronary blood flow','Heart attack from complete artery blockage','Peripheral vascular disease — poor circulation in legs'],
+    warning: 'Cholesterol above 240 mg/dl doubles the risk of heart disease compared to optimal levels.'
+  },
+  fastingbloodsugar: {
+    shortTerm: ['Fatigue and frequent urination','Blurred vision from fluid changes in the eye lens','Increased thirst'],
+    longTerm: ['Type 2 Diabetes — if blood sugar chronically elevated','Diabetic cardiomyopathy — heart muscle damage from high glucose','Nerve damage (neuropathy) affecting heart rate regulation','Increased plaque formation in arteries'],
+    warning: 'Diabetics are 2-4 times more likely to develop cardiovascular disease than non-diabetics.'
+  },
+  chestpain: {
+    shortTerm: ['Unstable angina — pain at rest that may signal imminent heart attack','Anxiety and reduced activity tolerance'],
+    longTerm: ['Progression to acute myocardial infarction if ischemia is left untreated','Ventricular dysfunction from repeated ischemic episodes','Reduced exercise capacity and quality of life'],
+    warning: 'Typical angina is a direct warning signal of coronary artery disease and should not be ignored.'
+  },
+  exerciseangia: {
+    shortTerm: ['Inability to perform daily activities without chest discomfort','Reduced oxygen delivery to heart during any physical effort'],
+    longTerm: ['Silent heart attacks — ischemia without awareness in some patients','Progressive coronary artery narrowing','Heart failure from recurrent ischemic injury'],
+    warning: 'Exercise-induced chest pain means the heart is not receiving enough blood during activity — a critical warning sign.'
+  },
+  oldpeak: {
+    shortTerm: ['Electrical instability in the heart during stress','Reduced exercise tolerance'],
+    longTerm: ['Ventricular fibrillation risk — a life-threatening arrhythmia','Chronic ischemic heart disease','Scarring of heart tissue from repeated low-oxygen episodes'],
+    warning: 'An ST depression (oldpeak) above 2mm is strongly associated with significant coronary artery disease.'
+  },
+  slope: {
+    shortTerm: ['Possible unstable angina during moderate activity','Abnormal heart rhythms under stress'],
+    longTerm: ['Severe multi-vessel coronary disease if slope is downsloping','Increased risk of sudden cardiac death','Heart failure from progressive ventricular dysfunction'],
+    warning: 'A downsloping ST segment during exercise is one of the most concerning ECG patterns for ischemia.'
+  },
+  noofmajorvessels: {
+    shortTerm: ['Reduced cardiac output even at rest in multi-vessel disease','Breathlessness on minimal exertion'],
+    longTerm: ['Three-vessel disease correlates with severe CAD requiring bypass surgery','Heart failure — the heart cannot compensate for blocked vessels','Cardiogenic shock in acute events'],
+    warning: 'Each additional blocked coronary vessel significantly increases mortality risk from cardiac events.'
+  },
+  restingrelectro: {
+    shortTerm: ['Palpitations and irregular heartbeat sensations','Fatigue from inefficient cardiac pumping'],
+    longTerm: ['Left ventricular hypertrophy (LVH) leading to diastolic dysfunction','Increased stroke risk from AF (atrial fibrillation)','Sudden cardiac death from undetected arrhythmia'],
+    warning: 'ECG abnormalities at rest often indicate existing structural changes in the heart that require urgent evaluation.'
+  },
+  maxheartrate: {
+    shortTerm: ['Poor exercise recovery and persistent fatigue','Lower aerobic capacity'],
+    longTerm: ['Chronotropic incompetence — heart cannot increase rate adequately under demand','Increased risk of cardiac events from poor heart rate reserve','Weakening of the cardiac autonomic system'],
+    warning: 'A low maximum heart rate relative to age is a strong independent predictor of cardiovascular mortality.'
+  },
+  age: {
+    shortTerm: ['Progressive loss of arterial elasticity','Natural increase in baseline CVD risk after 45 (men) and 55 (women)'],
+    longTerm: ['Higher probability of all cardiovascular events with each decade','Slower recovery from cardiac events','Greater complexity of treatment due to multi-morbidities'],
+    warning: 'Age is non-modifiable, but managing all other risk factors aggressively significantly reduces age-related risk.'
+  },
+  gender: {
+    shortTerm: ['Men face elevated risk from a younger age (45+) than women'],
+    longTerm: ['Men: Higher lifetime risk of heart attack and sudden cardiac death','Women post-menopause: Risk equalizes with men and increases sharply','Hormonal changes in women after 55 remove previous cardiovascular protection'],
+    warning: 'Biological sex interacts with all other risk factors — gender-specific screening schedules are important.'
+  }
+};
+
+function buildRiskConsequences(lvl) {
+  const data = RISK_CONSEQUENCES[lvl];
+  if (!data) return '';
+  const levels = ['Low','Moderate','High'];
+  const cols = levels.map(l => {
+    const d = RISK_CONSEQUENCES[l];
+    const isActive = l === lvl;
+    const cls = l.toLowerCase() === 'moderate' ? 'mod' : l.toLowerCase();
+    return `<div class="risk-level-col${isActive ? ' active-risk' : ''}">
+      <div class="risk-level-name ${cls}">${d.label}</div>
+      <ul>${d.conditions.slice(0,isActive?5:3).map(c=>`<li>${c}</li>`).join('')}</ul>
+    </div>`;
+  }).join('');
+  return `<div class="risk-consequences">
+    <div class="risk-consequences-hd">Health risks at each level — you are currently at ${data.label}</div>
+    <div class="risk-level-row">${cols}</div>
+  </div>`;
+}
+
+function buildFactorConsequences(data) {
+  const top = data.shap.feature_importance.filter(f => f.direction === 'increases').slice(0, 4);
+  if (!top.length) return '<p class="no-plan-note">No high-impact risk factors identified for consequence mapping.</p>';
+  return top.map(f => {
+    const c = FACTOR_CONSEQUENCES[f.feature];
+    if (!c) return '';
+    return `<div class="fcon-card">
+      <div class="fcon-hd">
+        <span class="fcon-title">${f.display_name}</span>
+        <span class="fcon-val">${f.value}</span>
+      </div>
+      <div class="fcon-body">
+        <div class="fcon-col">
+          <div class="fcon-col-label">Short-term risks if ignored</div>
+          <ul>${c.shortTerm.map(s=>`<li>${s}</li>`).join('')}</ul>
+        </div>
+        <div class="fcon-col">
+          <div class="fcon-col-label">Long-term complications</div>
+          <ul>${c.longTerm.map(s=>`<li>${s}</li>`).join('')}</ul>
+        </div>
+      </div>
+      <div class="fcon-warning">${c.warning}</div>
+    </div>`;
+  }).join('');
+}
 
 let cur=0, ans={}, selVal=null, apiResult=null;
 
@@ -556,6 +734,12 @@ function renderResults(data){
   document.getElementById('rpct').textContent=pct+'%';
   document.getElementById('rnote').textContent=NOTES[lvl]||'';
   drawGauge(pct);
+
+  // Risk consequences table (below gauge)
+  document.getElementById('risk-consequences-container').innerHTML = buildRiskConsequences(lvl);
+
+  // Per-factor consequence cards
+  document.getElementById('factor-consequences-container').innerHTML = buildFactorConsequences(data);
 
   document.getElementById('feat-shap').innerHTML=buildFeatHtml(data.shap&&data.shap.feature_importance);
   document.getElementById('feat-shap').style.display='flex';
