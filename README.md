@@ -20,17 +20,19 @@ CardioSense takes 12 clinical inputs, runs them through a soft-voting ensemble o
 > Start the API, open `cardiosense_local_api.html` in any browser, and answer 12 questions to get your risk report.
 
 ### Landing Page
-![CardioSense Landing Page](landing.png)
+<!-- Screenshot coming soon -->
 
 ### Risk Analysis & Explainability (SHAP/LIME)
-![CardioSense Results](results.png)
+<!-- Screenshot coming soon -->
+
+### Health Risk Consequences & Factor Warnings
+<!-- Screenshot coming soon -->
 
 ### Personalized Action Plan (Meals, Exercise, Yoga)
-![Action Plan 1](action_plan_1.png)
-![Action Plan 2](action_plan_2.png)
+<!-- Screenshot coming soon -->
 
 ### API Documentation (Swagger)
-![CardioSense API Docs](api_docs.png)
+<!-- Screenshot coming soon -->
 
 ![Risk Report](https://img.shields.io/badge/risk--report-SHAP%20%2B%20LIME-40415D?style=flat-square)
 ![Python](https://img.shields.io/badge/python-3.10%2B-40415D?style=flat-square)
